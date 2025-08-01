@@ -1,0 +1,117 @@
+---
+title: "Degrowth or Postgrowth? -- IPAT-Calculations"
+author: "Eugen Pissarskoi"
+format: 
+    dashboard:
+        theme: 
+            light: litera
+            dark: cyborg
+server: shiny
+---
+
+```{python}
+#| context: setup
+import math
+import numpy as np
+import matplotlib.pyplot as plt
+import plotly.express as px
+import pandas as pd
+from shiny import render, reactive, ui
+```
+
+## Row {height=25%}
+
+```{python}
+#| title: Choose the GDP growth rate
+#| expandable: false
+
+ui.input_slider("t_D1", "Climate Target: 95% CO-2 Emissions Reduction by", 2035, 2120, step=5, value=2050)
+
+ui.input_slider("g_P1", "Average annual Population Growth", -10, 10, value=0, step=0.5, post="%")
+
+ui.input_slider("g_BIP", "Average annual GDP Growth rate", -20, 30, value=5, step=1, post="%")
+
+```
+
+```{python}
+#| title: Choose the CO2-Intensity decline rate
+#| expandable: false
+
+ui.input_slider("t_D2", "Climate Target: 95% CO-2 Emissions Reduction by", 2035, 2120, step=5, value=2050)
+
+ui.input_slider("g_P2", "Average annual Population Growth", -10, 10, value=0, step=0.5, post="%")
+
+ui.input_slider("g_T", "Average annual CO2-Intensity Decline Rate", -30, 10, value=-4, step=1, post="%")
+
+```
+
+## Row {height=30%}
+
+```{python}
+#| content: valuebox
+#| title: "Required Average Change in CO2-Intensity"
+#| color: warning
+
+# Initial and final values
+initial_value = 750
+final_value = 40
+initial_year = 2025
+
+@reactive.Calc
+def years():
+    return input.t_D1()
+
+def population():
+    return input.g_P1()
+
+def bip():
+    return input.g_BIP()
+
+# Calculate the average annual decline rate
+@reactive.Calc
+def t_frame():
+    o_t_frame = years() - initial_year
+    return o_t_frame
+
+def poll_red():
+    o_poll_red = ((final_value / initial_value) ** (1 / t_frame()) - 1)
+    return o_poll_red
+
+def poll_red_perc():
+    o_poll_red_perc = poll_red() * 100
+    return o_poll_red_perc
+
+# Output box
+#@render.ui
+#def text_output():
+#    return ui.value_box("CO2-Reduktionsrate", poll_red_perc())
+
+@render.ui
+def outcome1():
+    req_g_T = poll_red_perc() - bip() - population()
+    formatted_req_T = f"{req_g_T:.2f}"
+    return ui.value_box(" ", f"{formatted_req_T} %")
+```
+
+```{python}
+#| content: valuebox
+#| title: "Required Average Annual Change in GDP"
+#| color: warning
+
+@reactive.Calc
+def co2_red_rate():
+    #co2_red = (5 + 10) / 100
+    co2_red = ((final_value / initial_value) ** (1 / (input.t_D2() - initial_year)) - 1) * 100
+    return co2_red
+
+@render.ui
+def outcome_bip():
+    req_bip = co2_red_rate() - input.g_P2() - input.g_T()
+    formatted_req_bip = f"{req_bip:.2f}"
+    return ui.value_box(" ", f"{formatted_req_bip} %")
+
+#dict(
+#    color = "secondary",
+#    value = outcome_bip()
+#)
+```
