@@ -16,16 +16,20 @@ import numpy as np
 import matplotlib.pyplot as plt
 import plotly.express as px
 import pandas as pd
+from datetime import datetime
 from shiny import render, reactive, ui
 ```
 
-## Row {height=25%}
+## Row {height=30%}
 
 ```{python}
 #| title: Choose the GDP growth rate
 #| expandable: false
 
-ui.input_slider("t_D1", "Climate Target: 95% CO-2 Emissions Reduction by", 2035, 2120, step=5, value=2050)
+ui.input_slider("t_D1", "Climate Target: 95%-Decarbonization of an economy should be achieved by", min=datetime(2025, 1, 1),
+    max=datetime(2200, 1, 1),
+    value=datetime(2050, 1, 1),
+    time_format="%Y", step=5)
 
 ui.input_slider("g_P1", "Average annual Population Growth", -10, 10, value=0, step=0.5, post="%")
 
@@ -37,7 +41,10 @@ ui.input_slider("g_BIP", "Average annual GDP Growth rate", -20, 30, value=5, ste
 #| title: Choose the CO2-Intensity decline rate
 #| expandable: false
 
-ui.input_slider("t_D2", "Climate Target: 95% CO-2 Emissions Reduction by", 2035, 2120, step=5, value=2050)
+ui.input_slider("t_D2", "Climate Target: 95%-Decarbonization of an economy should be achieved by", min=datetime(2025, 1, 1),
+    max=datetime(2200, 1, 1),
+    value=datetime(2050, 1, 1),
+    time_format="%Y", step=5)
 
 ui.input_slider("g_P2", "Average annual Population Growth", -10, 10, value=0, step=0.5, post="%")
 
@@ -49,7 +56,7 @@ ui.input_slider("g_T", "Average annual CO2-Intensity Decline Rate", -30, 10, val
 
 ```{python}
 #| content: valuebox
-#| title: "Required Average Change in CO2-Intensity"
+#| title: "To achieve the climate target by the chosen year, the CO2-Intensity of the economy must change annually by:"
 #| color: warning
 
 # Initial and final values
@@ -58,8 +65,9 @@ final_value = 40
 initial_year = 2025
 
 @reactive.Calc
-def years():
-    return input.t_D1()
+#def years():
+#    return input.t_D1()
+
 
 def population():
     return input.g_P1()
@@ -68,10 +76,10 @@ def bip():
     return input.g_BIP()
 
 # Calculate the average annual decline rate
+
 @reactive.Calc
 def t_frame():
-    o_t_frame = years() - initial_year
-    return o_t_frame
+    return abs(input.t_D1().year - initial_year)
 
 def poll_red():
     o_poll_red = ((final_value / initial_value) ** (1 / t_frame()) - 1)
@@ -95,13 +103,19 @@ def outcome1():
 
 ```{python}
 #| content: valuebox
-#| title: "Required Average Annual Change in GDP"
+#| title: "To achieve the climate target by the chosen year, the GDP of the economy must annually change on average by:"
 #| color: warning
+
+#@reactive.Calc
+#def years_2():
+#    return input.t_D2()
+
+
 
 @reactive.Calc
 def co2_red_rate():
     #co2_red = (5 + 10) / 100
-    co2_red = ((final_value / initial_value) ** (1 / (input.t_D2() - initial_year)) - 1) * 100
+    co2_red = ((final_value / initial_value) ** (1 / (input.t_D2().year - initial_year)) - 1) * 100
     return co2_red
 
 @render.ui
