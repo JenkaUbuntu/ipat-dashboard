@@ -64,24 +64,26 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: "_site/"
-# =====================================================
-# Deploy GitHub Pages site
-# =====================================================
-deploy_gh_pages:
-  if: github.ref == 'refs/heads/main'
-  needs: build
 
-  permissions:
-    pages: write
-    id-token: write
 
-  environment:
-    name: github-pages
-    url: ${{ steps.deployment.outputs.page_url }}
+  # =====================================================
+  # Deploy GitHub Pages site
+  # =====================================================
+  deploy_gh_pages:
+    if: github.ref == 'refs/heads/main'
+    needs: build
 
-  runs-on: ubuntu-latest
-  steps:
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v2
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
 
